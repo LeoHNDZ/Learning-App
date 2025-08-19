@@ -1,158 +1,145 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { BookOpen, ChevronRight, CheckCircle, Clock } from 'lucide-react';
-import { tutorials, type Tutorial, type TutorialStep } from '@/lib/studio-data';
+import { useState } from 'react'
+import { BookOpen, ChevronRight, CheckCircle, Clock, ArrowLeft } from 'lucide-react'
+import { tutorials, type Tutorial, type TutorialStep } from '@/lib/studio-data'
+import { ModuleCard, TutorialCard } from './module-card'
+import { ProgressBar, StepProgress } from './progress-bar'
+import { Tabs } from './segmented-control'
 
 export function TutorialSection() {
-  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null)
+  const [currentStep, setCurrentStep] = useState(0)
+  const [completedSteps, setCompletedSteps] = useState<number[]>([])
 
   const markStepComplete = (stepIndex: number) => {
     if (!completedSteps.includes(stepIndex)) {
-      setCompletedSteps([...completedSteps, stepIndex]);
+      setCompletedSteps([...completedSteps, stepIndex])
     }
-  };
+  }
 
-  const getDifficultyColor = (difficulty: Tutorial['difficulty']) => {
+  const getDifficultyBadge = (difficulty: Tutorial['difficulty']) => {
     switch (difficulty) {
       case 'beginner':
-        return 'bg-green-100 text-green-700 border-green-200';
+        return { text: difficulty, variant: 'success' as const }
       case 'intermediate':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+        return { text: difficulty, variant: 'warning' as const }
       case 'advanced':
-        return 'bg-red-100 text-red-700 border-red-200';
+        return { text: difficulty, variant: 'danger' as const }
     }
-  };
+  }
 
   if (selectedTutorial) {
-    const step = selectedTutorial.steps[currentStep];
-    const isStepComplete = completedSteps.includes(currentStep);
+    const step = selectedTutorial.steps[currentStep]
+    const isStepComplete = completedSteps.includes(currentStep)
+    const progressPercentage = (completedSteps.length / selectedTutorial.steps.length) * 100
+
+    const stepProgressData = selectedTutorial.steps.map((tutorialStep, index) => ({
+      label: tutorialStep.title,
+      completed: completedSteps.includes(index),
+      current: currentStep === index
+    }))
 
     return (
-      <div className="p-6">
+      <div className="container py-6">
         <div className="mb-6">
           <button
             onClick={() => setSelectedTutorial(null)}
-            className="text-blue-600 hover:text-blue-800 mb-4 flex items-center space-x-1"
+            className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-4"
           >
-            <span>← Back to tutorials</span>
+            <ArrowLeft className="w-4 h-4" />
+            Back to tutorials
           </button>
           
-          <div className="flex items-center space-x-3 mb-2">
-            <h2 className="text-2xl font-bold text-gray-900">{selectedTutorial.title}</h2>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(selectedTutorial.difficulty)}`}>
-              {selectedTutorial.difficulty}
-            </span>
+          <div className="flex items-start gap-4 mb-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-foreground">{selectedTutorial.title}</h1>
+                <span className={`
+                  px-3 py-1 rounded-full text-xs font-medium
+                  ${getDifficultyBadge(selectedTutorial.difficulty).variant === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : ''}
+                  ${getDifficultyBadge(selectedTutorial.difficulty).variant === 'warning' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : ''}
+                  ${getDifficultyBadge(selectedTutorial.difficulty).variant === 'danger' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : ''}
+                `}>
+                  {selectedTutorial.difficulty}
+                </span>
+              </div>
+              <p className="text-muted-foreground text-lg">{selectedTutorial.description}</p>
+            </div>
           </div>
-          <p className="text-gray-600">{selectedTutorial.description}</p>
-        </div>
 
-        {/* Progress bar */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Progress</span>
-            <span className="text-sm text-gray-600">
-              {completedSteps.length} / {selectedTutorial.steps.length} completed
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(completedSteps.length / selectedTutorial.steps.length) * 100}%` }}
-            />
-          </div>
+          <ProgressBar
+            value={completedSteps.length}
+            max={selectedTutorial.steps.length}
+            label="Overall Progress"
+            showLabel
+            animated
+            className="mb-6"
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Step navigation */}
           <div className="lg:col-span-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Steps</h3>
-            <ul className="space-y-2">
-              {selectedTutorial.steps.map((tutorialStep, index) => (
-                <li key={index}>
-                  <button
-                    onClick={() => setCurrentStep(index)}
-                    className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                      currentStep === index
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      {completedSteps.includes(index) ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <div className={`w-4 h-4 rounded-full border-2 ${
-                          currentStep === index ? 'border-blue-500' : 'border-gray-300'
-                        }`} />
-                      )}
-                      <span className={`text-sm ${
-                        currentStep === index ? 'font-medium text-blue-700' : 'text-gray-700'
-                      }`}>
-                        {index + 1}. {tutorialStep.title}
-                      </span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="modern-card p-4">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Tutorial Steps
+              </h3>
+              <StepProgress steps={stepProgressData} />
+            </div>
           </div>
 
           {/* Step content */}
           <div className="lg:col-span-3">
-            <div className="bg-white border rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-900">{step.title}</h3>
+            <ModuleCard
+              title={step.title}
+              description={step.description}
+              variant="glass"
+              size="lg"
+              interactive={false}
+              className="mb-6"
+            >
+              {step.codeFile && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-foreground mb-2">Related Code:</h4>
+                  <code className="text-xs bg-muted px-2 py-1 rounded">{step.codeFile}</code>
+                </div>
+              )}
+              
+              {step.explanation && (
+                <div className="mt-4 p-4 bg-accent/50 border border-accent rounded-lg">
+                  <h4 className="text-sm font-semibold text-accent-foreground mb-2">Explanation:</h4>
+                  <p className="text-sm text-accent-foreground">{step.explanation}</p>
+                </div>
+              )}
+            </ModuleCard>
+
+            {/* Navigation buttons */}
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                disabled={currentStep === 0}
+                className="px-4 py-2 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              
+              <div className="flex gap-2">
                 {!isStepComplete && (
                   <button
                     onClick={() => markStepComplete(currentStep)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-2"
                   >
+                    <CheckCircle className="w-4 h-4" />
                     Mark Complete
                   </button>
                 )}
-              </div>
-
-              <p className="text-gray-700 mb-4">{step.description}</p>
-
-              {step.codeFile && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Related File:</h4>
-                  <div className="bg-gray-100 p-3 rounded border">
-                    <code className="text-sm text-blue-600">{step.codeFile}</code>
-                  </div>
-                </div>
-              )}
-
-              {step.codeHighlight && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Code Example:</h4>
-                  <pre className="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto">
-                    <code>{step.codeHighlight}</code>
-                  </pre>
-                </div>
-              )}
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-blue-900 mb-2">Explanation:</h4>
-                <p className="text-blue-800">{step.explanation}</p>
-              </div>
-
-              {/* Navigation buttons */}
-              <div className="flex justify-between mt-6">
-                <button
-                  onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-                  disabled={currentStep === 0}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
+                
                 <button
                   onClick={() => setCurrentStep(Math.min(selectedTutorial.steps.length - 1, currentStep + 1))}
                   disabled={currentStep === selectedTutorial.steps.length - 1}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Next
                 </button>
@@ -161,47 +148,44 @@ export function TutorialSection() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-          <BookOpen className="w-6 h-6 text-blue-600" />
-          <span>Tutorial Section</span>
-        </h2>
-        <p className="text-gray-600 mt-2">
-          Step-by-step guides to understand key workflows and features
-        </p>
+    <div className="container py-6">
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <BookOpen className="w-8 h-8 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Tutorial Section</h1>
+            <p className="text-muted-foreground">Step-by-step guides to understand key workflows and features</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tutorials.map((tutorial) => (
-          <div
+          <TutorialCard
             key={tutorial.id}
-            className="border rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
+            title={tutorial.title}
+            description={tutorial.description}
+            badge={getDifficultyBadge(tutorial.difficulty)}
             onClick={() => setSelectedTutorial(tutorial)}
+            icon={BookOpen}
           >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-gray-900">{tutorial.title}</h3>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </div>
-            
-            <p className="text-gray-600 mb-4">{tutorial.description}</p>
-            
-            <div className="flex items-center justify-between">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(tutorial.difficulty)}`}>
-                {tutorial.difficulty}
-              </span>
-              <div className="flex items-center space-x-1 text-sm text-gray-500">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-3">
+              <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 <span>{tutorial.steps.length} steps</span>
               </div>
+              <div className="flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                <span>Interactive</span>
+              </div>
             </div>
-          </div>
+          </TutorialCard>
         ))}
       </div>
     </div>
-  );
+  )
 }
